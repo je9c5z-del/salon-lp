@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nail Salon Lueur</title>
+
+  <!-- Google Fonts: 見出し=Cormorant Garamond / 本文=Zen Maru Gothic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===== :root トークン（色・フォント等をまとめて変数化） ===== */
+    :root{
+      /* カラー */
+      --bg:        #fdfaf7;              /* やわらかいオフホワイト（全体背景） */
+      --bg-2:      #f7eef0;              /* セクションの色替え用（淡いピンク） */
+      --surface:   #ffffff;              /* カード等の上に乗る面 */
+      --text:      #3d2c2e;              /* ダークプラム寄りの本文色 */
+      --muted:     #8a7374;              /* 補助テキスト（少し薄い文字） */
+      --rose:      #d98ba0;              /* メイン：やわらかいローズ */
+      --rose-soft: rgba(217,139,160,.12);/* ローズの淡い面（ホバー等） */
+      --gold:      #c9a96e;              /* アクセント：落ち着いたゴールド */
+      --line:      rgba(61,44,46,.12);   /* 罫線 */
+
+      /* フォント */
+      --f-head:    "Cormorant Garamond", "Noto Serif JP", serif;
+      --f-body:    "Zen Maru Gothic", system-ui, sans-serif;
+
+      /* レイアウト */
+      --maxw:      1140px;                       /* コンテンツ最大幅 */
+      --ease:      cubic-bezier(.16,.84,.44,1);  /* 上品に減速するイージング */
+    }
+
+    /* ===== リセット ===== */
+    *{ margin:0; padding:0; box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }            /* アンカーで滑らかにスクロール */
+    img{ display:block; max-width:100%; height:auto; }
+    a{ color:inherit; text-decoration:none; }
+
+    /* ===== ベース ===== */
+    body{
+      font-family: var(--f-body);
+      background:  var(--bg);
+      color:       var(--text);
+      line-height: 1.85;
+      letter-spacing: .02em;
+      overflow-x:  hidden;
+    }
+    h1, h2, h3{
+      font-family: var(--f-head);
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: .03em;
+    }
+
+    /* ===== ヘッダー ===== */
+    header{
+      position: fixed; inset: 0 0 auto 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 28px;
+      transition: all .5s var(--ease);
+    }
+    /* スクロール後の状態（JSで .scrolled を付け外しする） */
+    header.scrolled{
+      padding: 14px 28px;
+      background: rgba(253, 250, 247, .75);
+      backdrop-filter: blur(14px) saturate(1.1);
+      -webkit-backdrop-filter: blur(14px) saturate(1.1);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .logo{
+      font-family: var(--f-head);
+      font-size: clamp(20px, 2.4vw, 24px);
+      letter-spacing: .08em;
+    }
+    .logo span{
+      color: var(--rose);          /* "Lueur" だけローズに */
+      font-style: italic;
+    }
+
+    nav{ display: flex; gap: 28px; }
+    nav a{
+      font-family: var(--f-head);
+      font-size: 15px;
+      letter-spacing: .12em;
+      padding: 4px 0;
+      position: relative;
+      transition: color .3s var(--ease);
+    }
+    /* ホバーで下から細い線が伸びる演出 */
+    nav a::after{
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 1px;
+      background: var(--rose);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform .4s var(--ease);
+    }
+    nav a:hover{ color: var(--rose); }
+    nav a:hover::after{
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    /* ハンバーガーボタン：PCでは非表示、モバイルでだけ出す */
+    .nav-toggle{
+      display: none;
+      background: none; border: 0;
+      font-size: 24px; cursor: pointer;
+      color: var(--text);
+    }
+
+    /* ===== ヒーロー ===== */
+    .hero{
+      position: relative;       /* 子の絶対配置（glow / scroll-cue）の基準点 */
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 28px 80px; /* 上はヘッダー分逃がす */
+      overflow: hidden;         /* はみ出した glow を隠す */
+    }
+
+    /* 装飾：ローズ&ゴールドの淡い円ぼかし */
+    .hero-glow{
+      position: absolute;
+      width: clamp(280px, 55vw, 520px);
+      height: clamp(280px, 55vw, 520px);
+      border-radius: 50%;
+      background: var(--rose);
+      opacity: .22;
+      filter: blur(80px);       /* 強めにぼかしてふんわり光らせる */
+      pointer-events: none;     /* マウス操作を邪魔しない */
+      z-index: 0;
+    }
+    .hero-glow--tr{ top: -120px; right: -120px; }
+    .hero-glow--bl{
+      bottom: -120px; left: -120px;
+      background: var(--gold);
+      opacity: .14;
+    }
+
+    .hero-inner{
+      position: relative;
+      z-index: 1;               /* glow の上に文字が来るように */
+      text-align: center;
+      max-width: 720px;
+    }
+
+    .eyebrow{
+      display: inline-block;
+      font-family: var(--f-head);
+      font-style: italic;
+      color: var(--rose);
+      letter-spacing: .25em;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+    .hero-title{
+      font-size: clamp(40px, 8vw, 88px);
+      line-height: 1.15;
+      margin-bottom: 22px;
+    }
+    .hero-sub{
+      color: var(--muted);
+      font-size: clamp(13px, 1.6vw, 15px);
+      margin-bottom: 36px;
+    }
+
+    /* CTAボタン（中抜き → ホバーで塗りつぶし） */
+    .btn-primary{
+      display: inline-block;
+      font-family: var(--f-head);
+      letter-spacing: .15em;
+      font-size: 14px;
+      padding: 14px 40px;
+      border: 1px solid var(--rose);
+      color: var(--rose);
+      transition: all .4s var(--ease);
+    }
+    .btn-primary:hover{
+      background: var(--rose);
+      color: var(--bg);
+    }
+
+    /* スクロール示唆（画面下中央） */
+    .scroll-cue{
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--f-head);
+      font-size: 11px;
+      letter-spacing: .25em;
+      color: var(--muted);
+      z-index: 1;
+    }
+
+    /* フェードイン演出（ページ読み込み時に下からふわっと） */
+    @keyframes fadeUp{
+      from{ opacity: 0; transform: translateY(20px); }
+      to  { opacity: 1; transform: translateY(0); }
+    }
+    .eyebrow     { animation: fadeUp 1s     var(--ease) both; }
+    .hero-title  { animation: fadeUp 1s .2s var(--ease) both; }
+    .hero-sub    { animation: fadeUp 1s .4s var(--ease) both; }
+    .btn-primary { animation: fadeUp 1s .6s var(--ease) both; }
+    .scroll-cue  { animation: fadeUp 1s 1s  var(--ease) both; }
+
+    /* ===== セクション共通 ===== */
+    section{ padding: 100px 28px; }       /* 各セクションの上下余白 */
+    .wrap{
+      max-width: var(--maxw);
+      margin: 0 auto;                     /* 中央寄せ＋最大幅 */
+    }
+    .section-title{
+      font-size: clamp(28px, 4.5vw, 44px);
+      line-height: 1.3;
+      margin-bottom: 28px;
+    }
+
+    /* ===== Concept ===== */
+    .concept-grid{
+      display: grid;
+      grid-template-columns: 1fr 1fr;     /* 2カラム */
+      gap: 64px;
+      align-items: center;
+    }
+    .concept-text p{
+      color: var(--muted);
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+    .concept-text p:last-child{ margin-bottom: 0; }
+
+    /* 写真ダミー枠（ローズ淡背景 + "PHOTO" 文字） */
+    .photo-placeholder{
+      aspect-ratio: 4 / 5;
+      background: var(--rose-soft);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--rose);
+      font-family: var(--f-head);
+      font-size: 13px;
+      letter-spacing: .35em;
+    }
+
+    /* Concept のモバイル：縦積み */
+    @media (max-width: 720px){
+      .concept-grid{
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+    }
+
+    /* リード文（セクション冒頭の補助テキスト） */
+    .lead{
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto;
+      font-size: 15px;
+    }
+
+    /* ===== Menu ===== */
+    .menu-head{ text-align: center; margin-bottom: 64px; }
+    .menu-head .eyebrow{ display: inline-block; margin-bottom: 12px; }
+    .menu-head .section-title{ margin-bottom: 20px; }
+
+    /* 自動カラム数調整グリッド：280px切りで列数が自動で変わる */
+    .menu-grid{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;                    /* この1px gapが罫線に見える */
+      background: var(--line);     /* gap から覗く色 */
+      border: 1px solid var(--line);
+    }
+    .menu-card{
+      background: var(--bg);       /* カード自身の背景でgapを切り分け */
+      padding: 36px 30px;
+      transition: background .4s var(--ease);
+    }
+    .menu-card:hover{ background: var(--surface); }
+    .menu-card .row{
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;       /* 名前と価格のベースラインを揃える */
+      gap: 16px;
+    }
+    .menu-card h3{
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+    .menu-card .price{
+      font-family: var(--f-head);
+      color: var(--rose);
+      font-size: 1.1rem;
+      white-space: nowrap;         /* 価格は改行禁止 */
+    }
+    .menu-card .time{
+      display: inline-block;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .2em;
+      margin-top: 6px;
+    }
+    .menu-card p{
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 14px;
+    }
+
+    /* ===== Gallery ===== */
+    .gallery{ background: var(--bg-2); }   /* 淡ピンクのセクション背景 */
+    .gallery-grid{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .gallery-item{
+      aspect-ratio: 1;                     /* 正方形 */
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(135deg, var(--rose), var(--gold));
+      cursor: pointer;
+      transition: transform .5s var(--ease);
+    }
+    .gallery-item:hover{ transform: scale(1.02); }
+    /* タイル上に "PHOTO" を疑似要素で重ねる */
+    .gallery-item::after{
+      content: "PHOTO";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,.7);
+      font-family: var(--f-head);
+      font-size: 12px;
+      letter-spacing: .25em;
+    }
+    @media (max-width: 720px){
+      .gallery-grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ===== Info ===== */
+    .info-grid{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+    .info-item .label{
+      color: var(--rose);
+      font-family: var(--f-head);
+      font-style: italic;        /* イタリックで品のあるラベルに */
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+    }
+    .info-item p{
+      color: var(--muted);
+      font-size: 14px;
+    }
+    @media (max-width: 760px){
+      .info-grid{
+        grid-template-columns: 1fr;
+        gap: 28px;
+        text-align: center;
+      }
+    }
+
+    /* ===== Reservation ===== */
+    .reservation{ background: var(--bg-2); }
+    .reservation-inner{
+      max-width: 560px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .reservation-inner .lead{ margin: 0 auto 40px; }
+
+    /* フォームの1項目（ラベル + 入力欄 + エラー） */
+    .field{ margin-bottom: 24px; text-align: left; }
+    .field label{
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: .05em;
+    }
+    .field input,
+    .field textarea{
+      width: 100%;
+      padding: 14px 18px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: border-color .3s;
+    }
+    .field input:focus,
+    .field textarea:focus{
+      outline: none;
+      border-color: var(--rose);    /* フォーカス時はローズ枠 */
+    }
+
+    /* エラー状態（JSで .invalid を付け外し） */
+    .field .error{
+      display: none;
+      color: #c97070;
+      font-size: 12px;
+      margin-top: 7px;
+    }
+    .field.invalid .error{ display: block; }
+    .field.invalid input,
+    .field.invalid textarea{ border-color: #c97070; }
+
+    #formMsg{
+      min-height: 1.6em;
+      margin-top: 8px;
+      font-size: 14px;
+      letter-spacing: .03em;
+    }
+
+    /* 送信ボタン（ローズの塗り。ホバーで濃色に） */
+    .btn-submit{
+      width: 100%;
+      margin-top: 8px;
+      padding: 16px;
+      font-family: var(--f-head);
+      letter-spacing: .2em;
+      font-size: 14px;
+      background: var(--rose);
+      color: var(--bg);
+      border: 0;
+      cursor: pointer;
+      transition: background .3s var(--ease);
+    }
+    .btn-submit:hover{ background: var(--text); }
+
+    /* フッター */
+    footer{
+      text-align: center;
+      padding: 60px 28px 40px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .06em;
+      border-top: 1px solid var(--line);
+    }
+    footer .logo{
+      font-size: 1.1rem;
+      margin-bottom: 14px;
+      display: inline-block;
+    }
+    footer .disclaimer{
+      margin-top: 14px;
+      font-size: 10px;
+      opacity: .7;
+      letter-spacing: .02em;
+    }
+
+    /* ===== モバイル（720px以下） ===== */
+    @media (max-width: 720px){
+      .nav-toggle{ display: block; }
+      nav{
+        position: fixed; top: 0; right: 0;
+        width: 70%; height: 100vh;
+        background: var(--bg);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 36px;
+        transform: translateX(100%);    /* 初期状態は画面外に隠しておく */
+        transition: transform .5s var(--ease);
+        box-shadow: -8px 0 24px rgba(0,0,0,.06);
+      }
+      nav.open{ transform: translateX(0); }  /* JSで .open を付けるとスライドイン */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== ヘッダー ===== -->
+  <header id="header">
+    <a href="#" class="logo">Nail <span>Lueur</span></a>
+    <button class="nav-toggle" id="navToggle" aria-label="メニュー">☰</button>
+    <nav id="nav">
+      <a href="#concept">Concept</a>
+      <a href="#menu">Menu</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#info">Info</a>
+      <a href="#reservation">Reservation</a>
+    </nav>
+  </header>
+
+  <!-- ===== ヒーロー ===== -->
+  <section class="hero" id="top">
+    <!-- 装飾：右上ローズ・左下ゴールドの淡い円ぼかし -->
+    <div class="hero-glow hero-glow--tr"></div>
+    <div class="hero-glow hero-glow--bl"></div>
+
+    <div class="hero-inner">
+      <span class="eyebrow">A Little Glow on Your Fingertips</span>
+      <h1 class="hero-title">Find Your Glow.</h1>
+      <p class="hero-sub">
+        あなただけの輝きを、爪先から。<br>
+        ひとときの上質を、Nail Lueur で。
+      </p>
+      <a href="#reservation" class="btn-primary">Reservation</a>
+    </div>
+
+    <a href="#concept" class="scroll-cue">↓ Scroll</a>
+  </section>
+
+  <!-- ===== Concept ===== -->
+  <section class="concept" id="concept">
+    <div class="wrap concept-grid">
+      <div class="concept-text">
+        <span class="eyebrow">Our Concept</span>
+        <h2 class="section-title">静かに灯る、<br>私だけの光。</h2>
+        <p>派手さはいらない。日々の中で、ふと指先に目をやった時の小さな喜び。Nail Lueur は、そんなささやかな輝きを大切にするネイルサロンです。</p>
+        <p>デザインはトレンドを追うのではなく、あなたの暮らしに馴染むものを。落ち着いた時間とともに、あなただけのひとつを仕立てます。</p>
+      </div>
+      <div class="photo-placeholder">PHOTO</div>
+    </div>
+  </section>
+
+  <!-- ===== Menu（中身はJSが生成） ===== -->
+  <section id="menu">
+    <div class="wrap">
+      <div class="menu-head">
+        <span class="eyebrow">Menu</span>
+        <h2 class="section-title">Price</h2>
+        <p class="lead">指先の物語に、はじまりを。お一人おひとりに合わせて、丁寧に。</p>
+      </div>
+      <div class="menu-grid" id="menuGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== Gallery（中身はJSが生成） ===== -->
+  <section class="gallery" id="gallery">
+    <div class="wrap">
+      <div class="menu-head">
+        <span class="eyebrow">Gallery</span>
+        <h2 class="section-title">デザインギャラリー</h2>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== Info ===== -->
+  <section id="info">
+    <div class="wrap">
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">Open Hours</div>
+          <p>平日 10:00 – 20:00<br>土日祝 9:00 – 19:00<br>定休日 木曜</p>
+        </div>
+        <div class="info-item">
+          <div class="label">Access</div>
+          <p>千葉県某所<br>最寄り駅から徒歩5分<br>駐車場 2台あり</p>
+        </div>
+        <div class="info-item">
+          <div class="label">Contact</div>
+          <p>TEL 000-0000-0000<br>Instagram @nail_lueur<br>ご予約はWEBから</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Reservation ===== -->
+  <section class="reservation" id="reservation">
+    <div class="wrap reservation-inner">
+      <span class="eyebrow">Reservation</span>
+      <h2 class="section-title">ご予約</h2>
+      <p class="lead">初めての方も、お気軽にお問い合わせください。</p>
+
+      <div class="field">
+        <label for="name">お名前</label>
+        <input type="text" id="name" placeholder="山田 花子">
+        <span class="error">お名前を入力してください</span>
+      </div>
+      <div class="field">
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" placeholder="example@mail.com">
+        <span class="error">正しいメールアドレスを入力してください</span>
+      </div>
+      <div class="field">
+        <label for="date">ご希望日</label>
+        <input type="date" id="date">
+        <span class="error">ご希望日を入力してください</span>
+      </div>
+      <div class="field">
+        <label for="msg">ご要望（任意）</label>
+        <textarea id="msg" rows="4" placeholder="ご希望のデザインや、お問い合わせなど"></textarea>
+      </div>
+      <button class="btn-submit" id="submitBtn">送信する</button>
+      <p id="formMsg"></p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="logo">Nail <span>Lueur</span></div>
+    © 2026 Nail Lueur — Portfolio sample by ちゃっぴー
+    <p class="disclaimer">※このサイトはWeb制作ポートフォリオ用のデモです。実在の店舗ではありません。</p>
+  </footer>
+
+  <script>
+    /* --- データ：メニュー（配列で管理） --- */
+    const menuItems = [
+      { name:"ワンカラー",     time:"60min", price:"¥6,500",  desc:"上品な単色仕上げ。お仕事中も馴染む定番デザイン。" },
+      { name:"フレンチ",       time:"75min", price:"¥7,800",  desc:"伝統的なフレンチライン。清楚で品のある指先に。" },
+      { name:"グラデーション", time:"75min", price:"¥7,800",  desc:"根本から先端へやわらかく溶けるニュアンス仕上げ。" },
+      { name:"アートデザイン", time:"90min", price:"¥9,500〜",desc:"ご希望に合わせた一点もの。素材を組み合わせて。" },
+      { name:"ハンドケア",     time:"40min", price:"¥4,200",  desc:"甘皮ケアと保湿で、素の指先から美しく。" },
+      { name:"ジェルオフ",     time:"30min", price:"¥2,200",  desc:"丁寧なオフで爪へのダメージを最小限に。" },
+    ];
+
+    /* メニュー生成（配列を map → テンプレ文字列 → innerHTML） */
+    document.getElementById("menuGrid").innerHTML = menuItems.map(item => `
+      <article class="menu-card">
+        <div class="row">
+          <h3>${item.name}</h3>
+          <span class="price">${item.price}</span>
+        </div>
+        <span class="time">${item.time}</span>
+        <p>${item.desc}</p>
+      </article>
+    `).join("");
+
+    /* --- ギャラリー：枠を6つ生成（後で写真に差し替え予定） --- */
+    document.getElementById("galleryGrid").innerHTML =
+      Array.from({ length: 6 }).map(() => `<div class="gallery-item"></div>`).join("");
+
+    /* --- スクロールでヘッダーの見た目を切り替える --- */
+    const header = document.getElementById("header");
+    window.addEventListener("scroll", () => {
+      // 60px以上スクロールしたら .scrolled クラスを付ける／戻ったら外す
+      header.classList.toggle("scrolled", window.scrollY > 60);
+    });
+
+    /* --- モバイルナビの開閉 --- */
+    const navToggle = document.getElementById("navToggle");
+    const nav = document.getElementById("nav");
+
+    navToggle.addEventListener("click", () => {
+      nav.classList.toggle("open");
+    });
+
+    // ナビ内のリンクを押したら自動で閉じる（モバイル時のUX）
+    nav.querySelectorAll("a").forEach(link => {
+      link.addEventListener("click", () => {
+        nav.classList.remove("open");
+      });
+    });
+
+    /* --- フォームのバリデーション --- */
+    const formMsg = document.getElementById("formMsg");
+    document.getElementById("submitBtn").addEventListener("click", () => {
+      let ok = true;
+      // 各項目の {id, test関数} を配列で管理
+      const checks = [
+        { id:"name",  test: v => v.trim() !== "" },
+        { id:"email", test: v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) },
+        { id:"date",  test: v => v !== "" },
+      ];
+
+      checks.forEach(c => {
+        const input = document.getElementById(c.id);
+        const field = input.closest(".field");      // 親の .field を取得
+        const valid = c.test(input.value);
+        field.classList.toggle("invalid", !valid);  // NGなら .invalid を付ける
+        if (!valid) ok = false;
+      });
+
+      if (ok){
+        formMsg.textContent = "送信しました。ご予約ありがとうございます。";
+        formMsg.style.color = "var(--rose)";
+        // すべての入力欄を空に戻す
+        ["name","email","date","msg"].forEach(id => document.getElementById(id).value = "");
+      } else {
+        formMsg.textContent = "未入力の項目があります。";
+        formMsg.style.color = "#c97070";
+      }
+    });
+  </script>
+
+</body>
+</html>
